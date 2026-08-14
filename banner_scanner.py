@@ -29,6 +29,7 @@ class PortScanner:
     def _scan_worker(self,port):
         if self.check_port(port):
             self.open_ports.append(port)
+            print(f"[+] Port {port} OPEN")
         
     def scan(self,start_port,end_port):
         threads = []
@@ -45,7 +46,7 @@ class PortScanner:
             try:
                 s.connect((self.target,port))
                 banner = s.recv(1024)
-                print(banner.decode(errors="ignore"))
+                return banner.decode(errors="ignore")
             except (socket.timeout,ConnectionRefusedError): 
                 return None
                 
@@ -56,7 +57,7 @@ except socket.gaierror:
     print(f"[!] The Host You Are Looking For Was Not Found")
     sys.exit(1)
             
-if args.start_port >= args.end_port:
+if args.start_port > args.end_port:
     print("[!] The Start Port Value Is Greater Than The End Value")
     sys.exit(1)
     
@@ -66,6 +67,8 @@ scanner = PortScanner(args.target,args.timeout)
 try:
     scanner.scan(args.start_port,args.end_port)
     for port in scanner.open_ports:
-        scanner.grab_banner(port)
+        banner = scanner.grab_banner(port)
+        if banner:
+            print(f"[+] Banner Port {port} : {banner}")
 except KeyboardInterrupt:
     exit(1)
