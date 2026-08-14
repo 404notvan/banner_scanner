@@ -1,142 +1,108 @@
-# 🐍 Learning Python — Day 5
+# ⚡ Multithreaded Banner Scanner
 
-> Progress belajar Python untuk persiapan **Ethical Hacking** (Red Team & Blue Team)
+> Lightweight, fast TCP port scanner and service banner grabber written in Python.
 
-![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat&logo=python&logoColor=white)
-![Status](https://img.shields.io/badge/Status-Completed-brightgreen?style=flat)
-![Day](https://img.shields.io/badge/Day-5-blue?style=flat)
-![Focus](https://img.shields.io/badge/Focus-OOP%2C%20Multithreading%20%26%20Banner%20Grabbing-orange?style=flat)
-
----
-
-## 📖 Daftar Isi
-
-- [🎯 Fokus Hari Ini](#-fokus-hari-ini)
-- [📚 Konsep & Kode Kunci](#-konsep--kode-kunci)
-- [✨ Fitur Utama](#-fitur-utama)
-- [⚙️ Cara Menjalankan](#️-cara-menjalankan)
-- [🧠 Alur Kerja Program](#-alur-kerja-program)
-- [📌 Progress Roadmap](#-progress-roadmap)
-- [⚠️ Ethical Use](#️-ethical-use)
+![Python](https://img.shields.io/badge/Python-3.x-3776AB?style=flat&logo=python&logoColor=white)
+![Tool Type](https://img.shields.io/badge/Tool-Network%20Recon-blue?style=flat)
+![Architecture](https://img.shields.io/badge/Architecture-Multithreaded%20%2F%20OOP-orange?style=flat)
+![Dependencies](https://img.shields.io/badge/Dependencies-Zero%20(Stdlib)-brightgreen?style=flat)
 
 ---
 
-## 🎯 Fokus Hari Ini
+## 📌 Overview
 
-Melanjutkan materi socket dari Day 4, hari ini memfokuskan pengembangan scanner menjadi lebih cepat, terstruktur, dan kaya informasi:
+**Banner Scanner** adalah tool *reconnaissance* jaringan berbasis CLI yang dirancang untuk melakukan scanning port TCP secara simultan (*multithreaded*) sekaligus mengambil data banner (*banner grabbing*) dari layanan yang aktif. Tool ini membantu mengidentifikasi port terbuka dan mendeteksi jenis/versi layanan yang berjalan pada target IP atau hostname.
 
-> ⚡ **Multithreaded Port Scanner & Banner Grabber (OOP Based)**
-
-Hari ini mempelajari 3 konsep penting:
-1. **Object-Oriented Programming (OOP)**: Membungkus logika scanning ke dalam class `PortScanner`.
-2. **Multithreading**: Menggunakan module `threading` agar proses scanning port berjalan secara simultan (jauh lebih cepat).
-3. **Banner Grabbing**: Mengambil respons service/banner dari port yang terbuka menggunakan `s.recv()`.
-
----
-
-## 📚 Konsep & Kode Kunci
-
-### 1️⃣ Class & Object-Oriented Programming (OOP)
-Mengorganisasi variabel target, timeout, dan port terbuka dalam struktur class:
-```python
-class PortScanner:
-    def __init__(self, target, timeout=1.0):
-        self.target = target
-        self.timeout = timeout
-        self.open_ports = []
-```
-
-### 2️⃣ Multithreading untuk Speed Up
-Menjalankan pengecekan port secara bersamaan (parallel) menggunakan `threading.Thread`:
-```python
-for port in range(start_port, end_port + 1):
-    t = threading.Thread(target=self._scan_worker, args=(port,))
-    threads.append(t)
-    t.start()
-
-for t in threads:
-    t.join()
-```
-
-### 3️⃣ Banner Grabbing
-Menerima respons data pertama dari port terbuka untuk mengidentifikasi layanan (misal: SSH, HTTP version):
-```python
-def grab_banner(self, port):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.settimeout(self.timeout)
-        try:
-            s.connect((self.target, port))
-            banner = s.recv(1024)
-            print(banner.decode(errors="ignore"))
-        except (socket.timeout, ConnectionRefusedError):
-            return None
-```
+Dibuat menggunakan modul standar Python (`socket`, `threading`, `argparse`), tool ini ringan, cepat, dan tidak memerlukan instalasi dependensi pihak ketiga.
 
 ---
 
 ## ✨ Fitur Utama
 
-- ✅ **Fast Multithreaded Scanning**: Scan ratusan port dalam hitungan detik.
-- ✅ **OOP Architecture**: Codebase rapi, modular, dan gampang dikembangkan.
-- ✅ **Banner Grabbing**: Menampilkan banner service pada port yang aktif.
-- ✅ **CLI Arguments**: Custom target, port range (`-s`, `-e`), dan timeout (`-t`).
-- ✅ **Error & Host Validation**: Validasi IP/hostname dan penanganan exception yang aman.
+- ⚡ **Multithreaded Scanning**: Menjalankan pengecekan port secara paralel untuk proses scanning yang cepat dan efisien.
+- 🏷️ **Service Banner Grabbing**: Mengambil respons awal (*banner*) dari port terbuka untuk mengidentifikasi layanan (seperti SSH, HTTP, dsb).
+- 🛠️ **CLI Argument Parser**: Fleksibel dalam menentukan target, rentang port (`-s`, `-e`), serta durasi timeout (`-t`).
+- 🔍 **Dynamic Host Resolution**: Mendukung input berupa IP Address maupun Hostname/Domain.
+- 🧱 **Clean OOP Architecture**: Kode terstruktur rapi berbasis kelas (`PortScanner`) sehingga mudah dipahami dan dikembangkan.
+- 📦 **Zero External Dependencies**: Berjalan sepenuhnya menggunakan Python 3 Standard Library.
 
 ---
 
-## ⚙️ Cara Menjalankan
+## 🧠 Alur Kerja Tool
 
-### 🚀 Usage Contoh
+```text
+       ┌────────────────────────┐
+       │   Input IP / Hostname   │
+       └───────────┬────────────┘
+                   │
+                   ▼
+       ┌────────────────────────┐
+       │  Resolve Host Domain   │
+       └───────────┬────────────┘
+                   │
+                   ▼
+       ┌────────────────────────┐
+       │ Multi-thread Port Scan │
+       └───────────┬────────────┘
+                   │
+         ┌─────────┴─────────┐
+         ▼                   ▼
+    [Port Open]        [Port Closed]
+         │
+         ▼
+ ┌───────────────┐
+ │ Grab Banner   │
+ └───────┬───────┘
+         │
+         ▼
+ ┌───────────────┐
+ │ Display Result│
+ └───────────────┘
+```
+
+---
+
+## ⚙️ Cara Penggunaan
+
+### 1. Prasyarat
+Pastikan Anda sudah menginstall **Python 3.x** di sistem Anda.
+
+### 2. Jalankan Tool
 
 ```bash
-# Scan default port range (1 - 1024)
+# Scan default port (1 - 1024) pada localhost
 python banner_scanner.py 127.0.0.1
 
-# Custom port range & timeout
-python banner_scanner.py 192.168.1.1 -s 20 -e 100 -t 0.5
+# Scan target domain dengan rentang port dan timeout khusus
+python banner_scanner.py scanme.nmap.org -s 20 -e 100 -t 0.5
 
-# Melihat opsi help CLI
+# Menampilkan bantuan parameter CLI
 python banner_scanner.py --help
 ```
 
+### 3. Opsi Parameter CLI
+
+| Parameter | Shorthand | Default | Deskripsi |
+| :--- | :--- | :--- | :--- |
+| `target` | - | *Wajib* | IP Address atau Hostname target |
+| `--start-port` | `-s` | `1` | Port awal pencarian |
+| `--end-port` | `-e` | `1024` | Port akhir pencarian |
+| `--timeout` | `-t` | `1.0` | Batas waktu respon per port (dalam detik) |
+
 ---
 
-## 🧠 Alur Kerja Program
+## 📊 Contoh Output
 
 ```text
-Input Target ──► Resolve Hostname ──► Launch Multi-Threads ──► Check TCP Port
-                                                                    │
-                                                            ┌───────┴───────┐
-                                                            ▼               ▼
-                                                         [OPEN]          [CLOSED]
-                                                            │
-                                                            ▼
-                                                     Grab Service Banner
+[+] Port 22 OPEN
+[+] Port 80 OPEN
+[+] Banner Port 22 : SSH-2.0-OpenSSH_8.2p1 Ubuntu-4ubuntu0.5
+[+] Banner Port 80 : HTTP/1.1 200 OK
 ```
 
 ---
 
-## 📌 Progress Roadmap
+## ⚠️ Penafian (Disclaimer)
 
-- [x] File Handling & Exception Handling
-- [x] Regex & Standard Modules (`os`, `sys`, `argparse`)
-- [x] Basic Socket Programming (Day 4)
-- [x] **OOP, Multithreading & Banner Grabbing (Day 5)**
-- [ ] HTTP Requests & Web Scraping
-- [ ] Automation & Security Tooling
+Tool ini dibuat untuk **tujuan edukasi, riset, dan pengujian keamanan legal (authorized security testing)**. Jangan gunakan tool ini pada jaringan atau sistem tanpa izin resmi dari pemilik target. Penggunaan tool ini sepenuhnya menjadi tanggung jawab pengguna.
 
----
-
-## ⚠️ Ethical Use
-
-Project ini dibuat murni untuk **tujuan edukasi dan pembelajaran cybersecurity**.
-
-> 🔐 **Learn security. Practice responsibly.**  
-Gunakan tool ini hanya pada perangkat sendiri, localhost, atau target yang secara sah memberikan izin pengujian.
-
----
-
-<p align="center">
-  <i>🐍 Learning Python step by step.</i><br>
-  <i>🔐 Building the foundation for Ethical Hacking & Security Tools.</i>
-</p>
